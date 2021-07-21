@@ -57,9 +57,22 @@
 {% endmacro %}
 
 
+{% macro with_props(with_props) %}
+  {%- if with_props is not none -%}
+      WITH (
+          {%- for key, value in with_props.items() -%}
+            {{ key }} = {{ value }}
+            {%- if not loop.last -%},{%- endif -%}
+          {%- endfor -%}
+      )
+  {%- endif -%}
+{%- endmacro -%}
+
+
 {% macro presto__create_table_as(temporary, relation, sql) -%}
-  create table
-    {{ relation }}
+  {%- set _with_props = config.get('with_props') -%}
+  create table {{ relation }}
+    {{ with_props(_with_props) }}
   as (
     {{ sql }}
   );
