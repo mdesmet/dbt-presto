@@ -62,7 +62,7 @@
       WITH (
           {%- for key, value in with_props.items() -%}
             {{ key }} = {{ value }}
-            {%- if not loop.last -%},{%- endif -%}
+            {%- if not loop.last -%}{{ '\n  ' }}{%- endif -%}
           {%- endfor -%}
       )
   {%- endif -%}
