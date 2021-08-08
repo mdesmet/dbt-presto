@@ -57,12 +57,35 @@
 {% endmacro %}
 
 
+{% macro presto__create_csv_table(model, agate_table) %}
+  {%- set column_override = model['config'].get('column_types', {}) -%}
+  {%- set quote_seed_column = model['config'].get('quote_columns', None) -%}
+  {%- set _with_props = config.get('with_props') -%}
+
+  {% set sql %}
+    create table {{ this.render() }} (
+        {%- for col_name in agate_table.column_names -%}
+            {%- set inferred_type = adapter.convert_type(agate_table, loop.index0) -%}
+            {%- set type = column_override.get(col_name, inferred_type) -%}
+            {%- set column_name = (col_name | string) -%}
+            {{ adapter.quote_seed_column(column_name, quote_seed_column) }} {{ type }} {%- if not loop.last -%}, {%- endif -%}
+        {%- endfor -%}
+    ) {{ with_props(_with_props) }}
+  {% endset %}
+
+  {% call statement('_') -%}
+    {{ sql }}
+  {%- endcall %}
+
+  {{ return(sql) }}
+{% endmacro %}
+
 {% macro with_props(with_props) %}
   {%- if with_props is not none -%}
       WITH (
           {%- for key, value in with_props.items() -%}
             {{ key }} = {{ value }}
-            {%- if not loop.last -%}{{ '\n  ' }}{%- endif -%}
+            {%- if not loop.last -%}{{ ',\n  ' }}{%- endif -%}
           {%- endfor -%}
       )
   {%- endif -%}
